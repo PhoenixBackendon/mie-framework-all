@@ -8,30 +8,30 @@ import (
 	"testing"
 )
 
-var h = func(w http.ResponseWriter, r *http.Request) {}
+var h = func(c *Context) {}
 
 func TestNew(t *testing.T) {
 	e := New()
-	assert.Empty(t, e.router)
+	assert.Empty(t, e.router.handlers)
 }
 
 func TestEngine_AddRoute(t *testing.T) {
 	e := New()
-	e.AddRoute("TEST", "/test", h)
-	assert.NotNil(t, e.router["TEST-/test"])
+	e.router.AddRoute("TEST", "/test", h)
+	assert.NotNil(t, e.router.handlers["TEST-/test"])
 
 	e.GET("/test", h)
-	assert.NotNil(t, e.router["GET-/test"])
+	assert.NotNil(t, e.router.handlers["GET-/test"])
 
 	e.POST("/test", h)
-	assert.NotNil(t, e.router["POST-/test"])
-	assert.Equal(t, 3, len(e.router))
+	assert.NotNil(t, e.router.handlers["POST-/test"])
+	assert.Equal(t, 3, len(e.router.handlers))
 }
 
 func TestEngine_Run(t *testing.T) {
 	e := New()
-	e.GET("/test", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello World!")
+	e.GET("/test", func(c *Context) {
+		fmt.Fprintf(c.Writer, "Hello World!")
 	})
 	go e.Run("localhost:8080")
 	//tr := &http.Transport{}
