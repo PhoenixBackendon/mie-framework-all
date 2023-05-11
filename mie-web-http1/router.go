@@ -1,29 +1,79 @@
 package mie
 
 import (
-	"log"
 	"net/http"
+	"strings"
 )
 
 type Router struct {
 	handlers map[string]HandlerFunc
+	roots    map[string]*node
 }
 
 func newRouter() *Router {
-	return &Router{handlers: make(map[string]HandlerFunc)}
+	return &Router{
+		handlers: make(map[string]HandlerFunc),
+		roots:    make(map[string]*node),
+	}
 }
 
-func (r *Router) AddRoute(method string, pattern string, handler HandlerFunc) {
-	log.Printf("Route %4s - %s", method, pattern)
+func parsePattern(pattern string) []string {
+	vs := strings.Split(pattern, "/")
+	parts := make([]string, 0)
+	for _, item := range vs {
+		if item != "" {
+			parts = append(parts, item)
+			if item[0] == '*' {
+				break
+			}
+		}
+	}
+	return parts
+}
+
+func (r *Router) addRoute(method string, pattern string, handler HandlerFunc) {
+	parts := parsePattern(pattern)
 	k := routeKey(method, pattern)
+	_, ok := r.roots[method]
+	if !ok {
+		r.roots[method] = &node{}
+	}
+	r.roots[method].insert(pattern, parts, 0)
 	r.handlers[k] = handler
 }
 
 func (r *Router) handle(c *Context) {
-	k := routeKey(c.Method, c.Path)
-	if h := r.handlers[k]; h != nil {
-		h(c)
+	n, params := r.getRoute(c.Method, c.Path)
+	if n != nil {
+		c.Params = params
+		k := routeKey(c.Method, c.Path)
+		r.handlers[k](c)
 	} else {
 		c.String(http.StatusNotFound, "404 NOT FOUND: %s\n", c.Path)
 	}
+}
+
+func (r *Router) getRoute(method string, path string) (*node, map[string]string) {
+	searchParts := parsePattern(path)
+	params := make(map[string]string)
+	root, ok := r.roots[method]
+	if !ok {
+		return nil, nil
+	}
+	n := root.search(searchParts, 0)
+
+	if n != nil {
+		parts := parsePattern(n.pattern)
+		for i, part := range parts {
+			if part[0] == '*' {
+				params[part[1:]] = searchParts[i]
+			}
+			if part[0] == '*' && len(part) > 1 {
+				params[part[1:]] = strings.Join(searchParts[i:], "/")
+				break
+			}
+		}
+		return n, params
+	}
+	return nil, nil
 }

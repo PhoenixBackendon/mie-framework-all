@@ -17,7 +17,7 @@ func TestNew(t *testing.T) {
 
 func TestEngine_AddRoute(t *testing.T) {
 	e := New()
-	e.router.AddRoute("TEST", "/test", h)
+	e.router.addRoute("TEST", "/test", h)
 	assert.NotNil(t, e.router.handlers["TEST-/test"])
 
 	e.GET("/test", h)

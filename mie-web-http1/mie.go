@@ -20,11 +20,11 @@ func (engine *Engine) Run(addr string) (err error) {
 }
 
 func (engine *Engine) GET(pattern string, handler HandlerFunc) {
-	engine.router.AddRoute(http.MethodGet, pattern, handler)
+	engine.router.addRoute(http.MethodGet, pattern, handler)
 }
 
 func (engine *Engine) POST(pattern string, handler HandlerFunc) {
-	engine.router.AddRoute(http.MethodPost, pattern, handler)
+	engine.router.addRoute(http.MethodPost, pattern, handler)
 }
 
 func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
