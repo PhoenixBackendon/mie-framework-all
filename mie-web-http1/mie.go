@@ -6,11 +6,6 @@ import (
 	"strings"
 )
 
-const (
-	GET  = "GET"
-	POST = "POST"
-)
-
 type HandlerFunc func(http.ResponseWriter, *http.Request)
 
 type Engine struct {
@@ -27,11 +22,11 @@ func (engine *Engine) AddRoute(method string, pattern string, handler HandlerFun
 }
 
 func (engine *Engine) GET(pattern string, handler HandlerFunc) {
-	engine.AddRoute(GET, pattern, handler)
+	engine.AddRoute(http.MethodGet, pattern, handler)
 }
 
 func (engine *Engine) POST(pattern string, handler HandlerFunc) {
-	engine.AddRoute(POST, pattern, handler)
+	engine.AddRoute(http.MethodPost, pattern, handler)
 }
 
 func (engine *Engine) Run(addr string) (err error) {
@@ -43,6 +38,7 @@ func (engine *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if h := engine.router[k]; h != nil {
 		h(w, r)
 	} else {
+		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "404 NOT FOUND: %s\n", r.URL)
 	}
 }
